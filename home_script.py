@@ -43,7 +43,8 @@ if __name__ == '__main__':
     robot = RealRobotArm()
 
     # send joint angles
-    joint_angles = [0, -1.57, 0, -1.57, 0, 0] # Home coordinates
+    joint_angles_array = [0, -90, 0, -90, 0, 0]
+    joint_angles = np.deg2rad(joint_angles_array) # Home coordinates
     robot.send_joint_command(joint_angles)
 
     # send gripper command
