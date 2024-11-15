@@ -48,5 +48,5 @@ if __name__ == '__main__':
 
     # send gripper command
     # set requested postion to 100 (value between 0-255)
-    robot.send_gripper_command(100)
+    robot.send_gripper_command(0)
     robot.close_connection()
