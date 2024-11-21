@@ -2,6 +2,7 @@
 
 import rospy
 import socket
+import numpy as np
 
 
 class RealRobotArm:
@@ -43,10 +44,11 @@ if __name__ == '__main__':
     robot = RealRobotArm()
 
     # send joint angles
-    joint_angles = [0, -1.57, 0, -1.57, 0, 0] # Home coordinates
+    joint_angles_array = [0, -90, 0, -90, 0, 0]
+    joint_angles = np.deg2rad(joint_angles_array) # Home coordinates
     robot.send_joint_command(joint_angles)
 
     # send gripper command
     # set requested postion to 100 (value between 0-255)
-    robot.send_gripper_command(100)
+    robot.send_gripper_command(0)
     robot.close_connection()
