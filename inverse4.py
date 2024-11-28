@@ -8,6 +8,9 @@ from urdf_parser_py.urdf import URDF
 
 class InverseKinematics:
     def __init__(self):
+        self.publisher = rospy.Publisher('/joint_states', JointState, queue_size=10)
+        self.joint_state_publisher = rospy.Publisher('my_joint_states', JointState, queue_size=10) 
+        self.pose_publisher = rospy.Publisher('my_pose', PoseStamped, queue_size=10)
         rospy.init_node("inverse_kinematics_node")
         self.rate = rospy.Rate(10)
         rospy.sleep(1.0)
@@ -21,6 +24,21 @@ class InverseKinematics:
         self.root = self.robot.get_root()
         self.tip = "tool0"  # Specify the end-effector (tip) link
         self.joint_names = self.robot.get_chain(self.root, self.tip, joints=True, links=False, fixed=False)
+        
+    def update_joint_state(self, joint_angles):
+        """
+        Publish updated joint state to the /joint_states topic.
+        """
+        joint_state = JointState()
+        joint_state.header = Header()
+        joint_state.header.stamp = rospy.Time.now()
+        
+        # Joint names must match those in your robot URDF or the robot model.
+        joint_state.name = ['joint1', 'joint2', 'joint3', 'joint4', 'joint5', 'joint6']  # Replace with actual joint names
+        joint_state.position = joint_angles  # Set joint angles from the inverse kinematics calculation
+        
+        # Publish the joint state message
+        self.publisher.publish(joint_state)
 
     def run(self):
         # Define a target pose (position only, for simplicity)

@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import numpy as np
+import math
 
 from forward_kinematics import ForwardKinematics
 
@@ -8,7 +9,7 @@ class InverseKinematics:
     def __init__(self):
         self.forward_kinematics = ForwardKinematics()
     
-    def inverse_kinematics(self, target_pose, initial_angles, tolerance=0.5, max_iterations=1000):
+    def inverse_kinematics(self, target_pose, initial_angles, tolerance=1e-6, max_iterations=1000):
         """
         Berechnet die Gelenkwinkel für eine Soll-Position.
         
@@ -34,7 +35,7 @@ class InverseKinematics:
 
             # Gelenkwinkel aktualisieren
             try:
-                theta = theta - np.linalg.pinv(J) @ delta
+                theta += np.linalg.pinv(J) @ delta
             except np.linalg.LinAlgError:
                 print("Jacobian ist singulär")
                 return None
@@ -76,7 +77,7 @@ class InverseKinematics:
     def calculate_jacobian(self, theta):
         """Numerische Berechnung der Jacobi-Matrix."""
         delta_theta = 1e-5
-        J = np.zeros((3, len(theta)))
+        J = np.zeros((6, len(theta)))
         
         current_pose = self.forward_kinematics.calculate(theta)
         for i in range(len(theta)):
@@ -125,15 +126,22 @@ if __name__ == '__main__':
     ik = InverseKinematics()
     fk = ForwardKinematics()
     
-    target_angles_deg = [6.56, -73.19, 60.39, -62.35, -1.13, 253.81]
+    target_angles_deg = [-87.8, -155.27, 6.21, -33.99, 85.44, 0.09]
     target_angles = np.deg2rad(target_angles_deg)
     target_pose = fk.calculate(target_angles)
     
-    random_angles_deg = ik.randomize_joint_angles()
-    random_angles = np.deg2rad(random_angles_deg)
+
     
-    joint_angles = ik.inverse_kinematics(target_pose, random_angles)
-    if joint_angles is not None:
-        print("Calculated Joint Angles:", np.rad2deg(joint_angles))
-    else:
-        print("No solution found for the given pose.")
+    solutions = list()
+    for epoch in range(100):
+        random_angles_deg = ik.randomize_joint_angles()
+        random_angles = np.deg2rad(random_angles_deg)
+        
+        print("Epoch: " + str(epoch))
+        joint_angles = ik.inverse_kinematics(target_pose, random_angles)
+        if joint_angles is not None:
+            joint_angles = joint_angles % (math.pi * 2)
+            print("Calculated Joint Angles:", np.rad2deg(joint_angles))
+            solutions.append(joint_angles)
+        else:
+            print("No solution found for the given pose.")

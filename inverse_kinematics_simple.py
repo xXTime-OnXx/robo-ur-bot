@@ -9,6 +9,7 @@ class InverseKinematics:
         self.fk = ForwardKinematics()
         self.max_iterations = 100
         self.tolerance = 1e-3
+        
     
     def inverse_kinematics(self, target_pose, initial_angles):
         """
@@ -43,38 +44,7 @@ class InverseKinematics:
         print("Failed to converge")
         return None
 
-    def calculate_error(self, target_pose, current_pose):
-        """Berechnet die Abweichung zwischen Soll- und Ist-Position."""
-        # Positionsfehler
-        position_error = target_pose[:3, 3] - current_pose[:3, 3]
-        
-        # Orientierungsfehler
-        target_quaternion = self.forward_kinematics.get_quaternion_from_matrix(target_pose)
-        current_quaternion = self.forward_kinematics.get_quaternion_from_matrix(current_pose)
-        
-        # Quaternion-Differenz (relative Orientierung)
-        orientation_error = self.quaternion_error(target_quaternion, current_quaternion)
-        
-        return np.hstack((position_error, orientation_error))
     
-    
-    def quaternion_error(self, target_quaternion, current_quaternion):
-        """Berechnet den Orientierungsfehler basierend auf Quaternions."""
-        q_target = np.array(target_quaternion)
-        q_current = np.array(current_quaternion)
-        
-        # Quaternion-Konjungierte von Ist-Wert
-        q_conj = q_current * np.array([1, -1, -1, -1])  # [q0, -q1, -q2, -q3]
-        
-        # Relativer Quaternion-Fehler
-        q_relative = np.array([
-            q_target[0] * q_conj[0] - np.dot(q_target[1:], q_conj[1:]),
-            *(q_target[0] * q_conj[1:] + q_conj[0] * q_target[1:] + np.cross(q_target[1:], q_conj[1:]))
-        ])
-        
-        # Rückgabe nur der imaginären Teile (Orientierungsvektor)
-        return q_relative[1:]
-
     def calculate_jacobian(self, joint_angles):
         """
         Numerisch berechnete Jacobi-Matrix.
@@ -98,6 +68,7 @@ class InverseKinematics:
             jacobian[:3, i] = position_diff  # Positionsteil
             
         return jacobian
+    
     
     def randomize_joint_angles(self):
         """

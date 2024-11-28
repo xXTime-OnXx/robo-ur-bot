@@ -45,7 +45,8 @@ if __name__ == '__main__':
     robot = RealRobotArm()
 
     # send joint angles
-    joint_angles_array = [0, -90, 0, -90, 0, 0]
+    joint_angles_array = [56.63633468, -32.537, 10.32710212, -153, -131, 2.40731305] # in radians
+    joint_angles_array = [-87.8, -155.27, 6.21, -33.99, 85.44, 0.09]
     joint_angles = np.deg2rad(joint_angles_array) # Home coordinates
     robot.send_joint_command(joint_angles)
 

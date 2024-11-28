@@ -28,25 +28,24 @@ class ForwardKinematics:
                 
             Returns: cords and pose of the tool
         '''
-        TR1 = self.R_z(joint_angles[0]) # rotate around z-axis by joint angle
-        TM1 = self.E(z = self._OFFSET_JOINT_1) # move by height of base
-
+        TR1 = self.R_z(joint_angles[0])
+        TM1 = self.E(z = 0.15185)
+        
         TR2 = self.R_y(joint_angles[1])
-        TM2 = self.E(x = self._OFFSET_JOINT_2) 
+        TM2 = self.E(x = -0.24355)
         
         TR3 = self.R_y(joint_angles[2])
-        TM3 = self.E(x = self._OFFSET_JOINT_3)
+        TM3 = self.E(x = -0.2132)
         
         TR4 = self.R_y(joint_angles[3])
-        TM4 = self.E(y = self._OFFSET_JOINT_4)
+        TM4 = self.E(y = -0.13105)
         
         TR5 = self.R_z(joint_angles[4])
-        TM5 = self.E(z = self._OFFSET_JOINT_5)
+        TM5 = self.E(z = -0.08535)
         
         TR6 = self.R_y(joint_angles[5])
-        TM6 = self.E(y = self._OFFSET_JOINT_6)
+        TM6 = self.E(y = -0.0921)
         
-
         T1 = TR1 @ TM1 
         T2 = T1 @ TR2 @ TM2 
         T3 = T2 @ TR3 @ TM3
@@ -128,10 +127,16 @@ class ForwardKinematics:
 
 
 if __name__ == '__main__':
-    joint_angles = [0, 90, 0, -90, 0, 88] # in radians
+    joint_angles_default = [0, 90, 0, -90, 0, 0] # default
+    joint_angles = [56.63633468, -32.537, 10.32710212, 206.18434454, 229.93784321, 2.40731305] # in radians
     joint_angles_in_rad = np.deg2rad(joint_angles)
     
     fk = ForwardKinematics()
     fk.run(joint_angles_in_rad)
+    
+    target_angles_deg = [-87.8, -155.27, 6.21, -33.99, 85.44, 0.09]
+    target_angles = np.deg2rad(target_angles_deg)
+    fk.run(target_angles)
+    
     
     
