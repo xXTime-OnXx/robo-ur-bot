@@ -6,39 +6,41 @@ from forward_kinematics import ForwardKinematics
 
 class InverseKinematics:
     def __init__(self):
-        self.forward_kinematics = ForwardKinematics()
+        self.fk = ForwardKinematics()
+        self.max_iterations = 100
+        self.tolerance = 1e-3
     
-    def inverse_kinematics(self, target_pose, initial_angles, tolerance=0.5, max_iterations=1000):
+    def inverse_kinematics(self, target_pose, initial_angles):
         """
-        Berechnet die Gelenkwinkel für eine Soll-Position.
+        Löst die IK für eine gegebene Zielpose.
+        """
+        angles = np.array(initial_angles)
         
-        :param target_pose: Zielposition (4x4 Homogene Matrix)
-        :param initial_angles: Initiale Gelenkwinkel (1x6 Vektor)
-        :param forward_kinematics: Funktion zur Berechnung der Vorwärtskinematik
-        :param tolerance: Toleranz für die Abweichung
-        :param max_iterations: Maximale Anzahl Iterationen
-        :return: Gelenkwinkel oder None, wenn keine Lösung gefunden wurde
-        """
-        theta = np.array(initial_angles)
-        for i in range(max_iterations):
-            # Ist-Position berechnen
-            current_pose = self.forward_kinematics.calculate(theta)
-            delta = self.calculate_error(target_pose, current_pose)
+        for iteration in range(self.max_iterations):
+            # Vorwärtskinematik berechnen
+            current_pose = self.fk.calculate(angles)
             
-            # Abbruchkriterium prüfen
-            if np.linalg.norm(delta) < tolerance:
-                return theta
-
+            # Fehler berechnen (Positionsteil)
+            position_error = target_pose[:3, 3] - current_pose[:3, 3]
+            error_norm = np.linalg.norm(position_error)
+            
+            if error_norm < self.tolerance:
+                print(f"Converged in {iteration} iterations")
+                return angles
+            
             # Jacobi-Matrix berechnen
-            J = self.calculate_jacobian(theta)
-
+            J = self.calculate_jacobian(angles)
+            
+            # Pseudoinverse der Jacobi-Matrix
+            J_pseudo = np.linalg.pinv(J)
+            
+            # Delta der Gelenkwinkel berechnen
+            delta_angles = J_pseudo @ position_error
+            
             # Gelenkwinkel aktualisieren
-            try:
-                theta = theta - np.linalg.pinv(J) @ delta
-            except np.linalg.LinAlgError:
-                print("Jacobian ist singulär")
-                return None
-        print("Maximale Iterationen erreicht")
+            angles += delta_angles
+        
+        print("Failed to converge")
         return None
 
     def calculate_error(self, target_pose, current_pose):
@@ -73,30 +75,29 @@ class InverseKinematics:
         # Rückgabe nur der imaginären Teile (Orientierungsvektor)
         return q_relative[1:]
 
-    def calculate_jacobian(self, theta):
-        """Numerische Berechnung der Jacobi-Matrix."""
-        delta_theta = 1e-5
-        J = np.zeros((3, len(theta)))
+    def calculate_jacobian(self, joint_angles):
+        """
+        Numerisch berechnete Jacobi-Matrix.
+        """
+        delta = 1e-6
+        n = len(joint_angles)
+        jacobian = np.zeros((6, n))  # 3 für Position, 3 für Orientierung
         
-        current_pose = self.forward_kinematics.calculate(theta)
-        for i in range(len(theta)):
-            theta_perturbed = theta.copy()
-            theta_perturbed[i] += delta_theta
-            
-            # Berechnung der Pose bei perturbiertem Gelenkwinkel
-            pose_perturbed = self.forward_kinematics.calculate(theta_perturbed)
-            
-            # Positionsteil der Jacobi-Matrix
-            delta_position = (pose_perturbed[:3, 3] - current_pose[:3, 3]) / delta_theta
-            J[:3, i] = delta_position  # Positionsteil
-            
-            # Orientierungsteil der Jacobi-Matrix
-            q_perturbed = self.forward_kinematics.get_quaternion_from_matrix(pose_perturbed)
-            q_current = self.forward_kinematics.get_quaternion_from_matrix(current_pose)
-            delta_orientation = (self.quaternion_error(q_perturbed, q_current)) / delta_theta
-            J[3:, i] = delta_orientation  # Orientierungsteil
+        # Berechnung der Vorwärtskinematik für aktuelle Gelenkwinkel
+        current_pose = self.fk.calculate(joint_angles)
         
-        return J
+        for i in range(n):
+            perturbed_angles = joint_angles.copy()
+            perturbed_angles[i] += delta
+            perturbed_pose = self.fk.calculate(perturbed_angles)
+            
+            # Position und Orientierung ableiten
+            position_diff = (perturbed_pose[:3, 3] - current_pose[:3, 3]) / delta
+            # Orientierung hier weggelassen oder separat behandelt
+            
+            jacobian[:3, i] = position_diff  # Positionsteil
+            
+        return jacobian
     
     def randomize_joint_angles(self):
         """

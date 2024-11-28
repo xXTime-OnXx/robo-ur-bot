@@ -16,11 +16,9 @@ class ForwardKinematics:
         self._OFFSET_JOINT_6 = -0.0921 # length of sixth joint
 
     def run(self, joint_angles):
-        end_effector_pose = self.calculate(joint_angles)
-        print(end_effector_pose)
+        end_effector_matrix = self.calculate(joint_angles)
         
-        print(self.get_pose_map_from_matrix(end_effector_pose))
-        print(self.extract_euler_angles(end_effector_pose))
+        print(self.get_pose_map_from_matrix(end_effector_matrix))
         
  
     def calculate(self, joint_angles):
@@ -97,34 +95,9 @@ class ForwardKinematics:
         matrix : homogeneous matrix 4x4
         """
         q = self.get_quaternion_from_matrix(matrix)
-        yaw, pitch, roll = self.extract_euler_angles(matrix)
 
-        return Pose(matrix[0][3], matrix[1][3], matrix[2][3], yaw, pitch, roll)
+        return Pose(matrix[0][3], matrix[1][3], matrix[2][3], q[0], q[1], q[2], q[3])
     
-    def extract_euler_angles(self, matrix):
-        """
-        Extrahiert die Euler-Winkel (Yaw, Pitch, Roll) aus einer homogenen 4x4-Matrix.
-        Es wird die ZYX-Euler-Winkel-Konvention verwendet.
-        
-        Args:
-            matrix (numpy.ndarray): Die homogene 4x4-Matrix.
-            
-        Returns:
-            tuple: Ein Tupel (yaw, pitch, roll) in Radiant.
-        """
-        # Prüfen, ob die Matrix die richtige Form hat
-        if matrix.shape != (4, 4):
-            raise ValueError("Die Eingabematrix muss eine 4x4-Matrix sein.")
-
-        # Extrahiere die Rotationsmatrix (die oberen linken 3x3 Elemente)
-        R = matrix[:3, :3]
-
-        # Berechne die Euler-Winkel
-        yaw = np.arctan2(R[1, 0], R[0, 0])           # Psi
-        pitch = np.arcsin(-R[2, 0])                  # Theta
-        roll = np.arctan2(R[2, 1], R[2, 2])          # Phi
-
-        return yaw, pitch, roll
 
     # the ROS message type PoseStamped uses quaternions for the orientation
     def get_quaternion_from_matrix(self, matrix):
@@ -155,7 +128,7 @@ class ForwardKinematics:
 
 
 if __name__ == '__main__':
-    joint_angles = [0, -90, 0, -90, 0, 0] # in radians
+    joint_angles = [0, 90, 0, -90, 0, 88] # in radians
     joint_angles_in_rad = np.deg2rad(joint_angles)
     
     fk = ForwardKinematics()

@@ -2,13 +2,14 @@
 
 class Pose:
     
-    def __init__(self, x, y, z, yaw, pitch, roll):
+    def __init__(self, x, y, z, q_w, q_x, q_y, q_z):
          self._x = x
          self._y = y
          self._z = z
-         self._yaw = yaw
-         self._pitch = pitch
-         self._roll = roll
+         self._q_w = q_w
+         self._q_x = q_x
+         self._q_y = q_y
+         self._q_z = q_z
          
     def __str__(self):
         return (
@@ -17,7 +18,8 @@ class Pose:
             f"  y: {self._y}\n"
             f"  z: {self._z}\n"
             f"Orientation:\n"
-            f"  yaw: {self._yaw}\n"
-            f"  pitch: {self._pitch}\n"
-            f"  roll: {self._roll}\n"
+            f"  q_w: {self._q_w}\n"
+            f"  q_x: {self._q_x}\n"
+            f"  q_y: {self._q_y}\n"
+            f"  q_z: {self._q_z}\n"
         )
