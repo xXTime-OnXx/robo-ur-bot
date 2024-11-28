@@ -2,11 +2,8 @@
 
 import numpy as np
 import math
-from sensor_msgs.msg import JointState
-from geometry_msgs.msg import PoseStamped
-from urdf_parser_py.urdf import URDF
 
-
+from pose import Pose
 
 class ForwardKinematics:
 
@@ -20,8 +17,10 @@ class ForwardKinematics:
 
     def run(self, joint_angles):
         end_effector_pose = self.calculate(joint_angles)
+        print(end_effector_pose)
         
-        print(self.get_pose_message_from_matrix(end_effector_pose))
+        print(self.get_pose_map_from_matrix(end_effector_pose))
+        print(self.extract_euler_angles(end_effector_pose))
         
  
     def calculate(self, joint_angles):
@@ -57,7 +56,7 @@ class ForwardKinematics:
         T5 = T4 @ TR5 @ TM5
         TR = T5 @ TR6 @ TM6
         
-        return TR.tolist()
+        return TR
     
         
     def R_x(self, theta, x = 0, y = 0, z = 0):
@@ -93,24 +92,39 @@ class ForwardKinematics:
         ])
 
     # the following function creates a PoseStamped message from a homogeneous matrix
-    def get_pose_message_from_matrix(self, matrix):
-
-        """Return pose msgs from homogeneous matrix
+    def get_pose_map_from_matrix(self, matrix):
+        """Return pose map from homogeneous matrix
         matrix : homogeneous matrix 4x4
         """
-        pose_stamped = PoseStamped()
-        pose_stamped.header.frame_id = "base"
-        pose = pose_stamped.pose
-        pose.position.x = matrix[0][3]
-        pose.position.y = matrix[1][3]
-        pose.position.z = matrix[2][3]
-
         q = self.get_quaternion_from_matrix(matrix)
-        pose.orientation.x = q[0]
-        pose.orientation.y = q[1]
-        pose.orientation.z = q[2]
-        pose.orientation.w = q[3]
-        return pose_stamped
+        yaw, pitch, roll = self.extract_euler_angles(matrix)
+
+        return Pose(matrix[0][3], matrix[1][3], matrix[2][3], yaw, pitch, roll)
+    
+    def extract_euler_angles(self, matrix):
+        """
+        Extrahiert die Euler-Winkel (Yaw, Pitch, Roll) aus einer homogenen 4x4-Matrix.
+        Es wird die ZYX-Euler-Winkel-Konvention verwendet.
+        
+        Args:
+            matrix (numpy.ndarray): Die homogene 4x4-Matrix.
+            
+        Returns:
+            tuple: Ein Tupel (yaw, pitch, roll) in Radiant.
+        """
+        # Prüfen, ob die Matrix die richtige Form hat
+        if matrix.shape != (4, 4):
+            raise ValueError("Die Eingabematrix muss eine 4x4-Matrix sein.")
+
+        # Extrahiere die Rotationsmatrix (die oberen linken 3x3 Elemente)
+        R = matrix[:3, :3]
+
+        # Berechne die Euler-Winkel
+        yaw = np.arctan2(R[1, 0], R[0, 0])           # Psi
+        pitch = np.arcsin(-R[2, 0])                  # Theta
+        roll = np.arctan2(R[2, 1], R[2, 2])          # Phi
+
+        return yaw, pitch, roll
 
     # the ROS message type PoseStamped uses quaternions for the orientation
     def get_quaternion_from_matrix(self, matrix):
@@ -141,10 +155,10 @@ class ForwardKinematics:
 
 
 if __name__ == '__main__':
-    joint_angles = [0, -90, 0, 0, 0, 0] # in radians
+    joint_angles = [0, -90, 0, -90, 0, 0] # in radians
     joint_angles_in_rad = np.deg2rad(joint_angles)
     
-    fk = ForwardKinematics(joint_angles_in_rad)
-    fk.run()
+    fk = ForwardKinematics()
+    fk.run(joint_angles_in_rad)
     
     
