@@ -11,11 +11,11 @@ from urdf_parser_py.urdf import URDF
 
 class ForwardKinematics:
 
-    def __init__(self):  
+    def __init__(self):
         # we create two publishers in our ROS node
         # one to publish the angles of the joints (joint states)
         # and another for visualizing a target pose (to see whether your calculations are correct)
-        self.joint_state_publisher = rospy.Publisher('my_joint_states', JointState, queue_size=10) 
+        self.joint_state_publisher = rospy.Publisher('my_joint_states', JointState, queue_size=10)
         self.pose_publisher = rospy.Publisher('my_pose', PoseStamped, queue_size=10)
         rospy.init_node('my_joint_state_publisher')
         self.rate = rospy.Rate(10)
@@ -36,56 +36,56 @@ class ForwardKinematics:
 
         # create the joint state messages
         js = JointState()
-        js.name = joint_names      
+        js.name = joint_names
         js.position = joint_angles
 
-        end_effector_pose = self.calculate_forward_kinematics(joint_angles, joint_names, robot)
-        
+        end_effector_pose = self.calculate_forward_kinematics(joint_angles, joint_names)
+
         if end_effector_pose:
             target_pose_message = self.get_pose_message_from_matrix(end_effector_pose)
             print(target_pose_message)
         else:
             rospy.logerr("error, no target pose calculated, use identity matrix instead")
             target_pose_message = self.get_pose_message_from_matrix(np.identity(4))
-            
+
 
         # publish the joint state values and the target pose
         while not rospy.is_shutdown():
             self.joint_state_publisher.publish(js)
             self.pose_publisher.publish(target_pose_message)
             self.rate.sleep()
- 
-    def calculate_forward_kinematics(self, joint_positions, joint_names, robot):
+
+    def calculate_forward_kinematics(self, joint_positions):
         TR1 = self.R_z(joint_positions[0])
         TM1 = self.E(z = 0.15185)
 
         TR2 = self.R_y(joint_positions[1])
         TM2 = self.E(x = -0.24355)
-        
+
         TR3 = self.R_y(joint_positions[2])
         TM3 = self.E(x = -0.2132)
-        
+
         TR4 = self.R_y(joint_positions[3])
         TM4 = self.E(y = -0.13105)
-        
+
         TR5 = self.R_z(joint_positions[4])
         TM5 = self.E(z = -0.08535)
-        
+
         TR6 = self.R_y(joint_positions[5])
         TM6 = self.E(y = -0.0921)
-        
 
-        T1 = TR1 @ TM1 
-        T2 = T1 @ TR2 @ TM2 
+
+        T1 = TR1 @ TM1
+        T2 = T1 @ TR2 @ TM2
         T3 = T2 @ TR3 @ TM3
-        T4 = T3 @ TR4 @ TM4 
+        T4 = T3 @ TR4 @ TM4
         T5 = T4 @ TR5 @ TM5
         TR = T5 @ TR6 @ TM6
-        
+
         print(TR)
-        return TR.tolist()        
-    
-        
+        return TR.tolist()
+
+
     def R_x(self, theta):
         return np.array([
             [1,         0,              0,              0],
@@ -93,7 +93,7 @@ class ForwardKinematics:
             [0,         -np.sin(theta), np.cos(theta),  0],
             [0,         0,              0,              1]
         ])
-        
+
     def R_y(self, theta):
         return np.array([
             [np.cos(theta),     0,          -np.sin(theta),     0],
@@ -101,7 +101,7 @@ class ForwardKinematics:
             [np.sin(theta),     0,          np.cos(theta),      0],
             [0,                 0,          0,                  1]
         ])
-        
+
     def R_z(self, theta):
         return np.array([
             [np.cos(theta),     -np.sin(theta),     0,      0],
@@ -109,7 +109,7 @@ class ForwardKinematics:
             [0,                 0,                  1,      0],
             [0,                 0,                  0,      1]
         ])
-        
+
     def E(self, x = 0, y = 0, z = 0):
         return np.array([
             [1,     0,      0,      x],
@@ -169,5 +169,3 @@ class ForwardKinematics:
 if __name__ == '__main__':
     fk = ForwardKinematics()
     fk.run()
-    
-    
