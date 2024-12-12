@@ -86,27 +86,27 @@ class ForwardKinematics:
         return TR.tolist()        
     
         
-    def R_x(self, theta, x = 0, y = 0, z = 0):
+    def R_x(self, theta):
         return np.array([
-            [1,         0,              0,              x],
-            [0,         np.cos(theta),  np.sin(theta),  y],
-            [0,         -np.sin(theta), np.cos(theta),  z],
+            [1,         0,              0,              0],
+            [0,         np.cos(theta),  np.sin(theta),  0],
+            [0,         -np.sin(theta), np.cos(theta),  0],
             [0,         0,              0,              1]
         ])
         
-    def R_y(self, theta, x = 0, y = 0, z = 0):
+    def R_y(self, theta):
         return np.array([
-            [np.cos(theta),     0,          -np.sin(theta),     x],
-            [0,                 1,          0,                  y],
-            [np.sin(theta),     0,          np.cos(theta),      z],
+            [np.cos(theta),     0,          -np.sin(theta),     0],
+            [0,                 1,          0,                  0],
+            [np.sin(theta),     0,          np.cos(theta),      0],
             [0,                 0,          0,                  1]
         ])
         
-    def R_z(self, theta, x = 0, y = 0, z = 0):
+    def R_z(self, theta):
         return np.array([
-            [np.cos(theta),     -np.sin(theta),     0,      x],
-            [np.sin(theta),     np.cos(theta),      0,      y],
-            [0,                 0,                  1,      z],
+            [np.cos(theta),     -np.sin(theta),     0,      0],
+            [np.sin(theta),     np.cos(theta),      0,      0],
+            [0,                 0,                  1,      0],
             [0,                 0,                  0,      1]
         ])
         
